@@ -52,28 +52,35 @@ class _FresnelZonePageState extends State<FresnelZonePage> {
                                     width: 2,
                                   ),
                                 ),
-                                child: Align(
-                                  alignment: Alignment.topLeft,
-                                  child: Consumer<FresnelZonePlotModel>(
-                                    builder:(context, plotModel, child) {
-                                      return CustomPaint(
-                                        painter: FresnelZonePlotPainter(plotModel.scaledPlot),
-                                        child: Container(),
-                                      );
-                                    },
-                                  ),
+                                child: Consumer<FresnelZonePlotModel>(
+                                  builder: (context, plotModel, child) {
+                                    return GestureDetector(
+                                      onTapUp: (details) {
+                                        List<double>? modelPoint = plotModel.scaleCanvasPointCoordinatesToModelCoordinates(
+                                          details.localPosition, 
+                                          context.size?.width ?? 1, 
+                                          context.size?.height ?? 1
+                                        );
+                                        if (modelPoint != null) {
+                                          plotModel.initSelectedPoint(modelPoint[0], modelPoint[1]);
+                                        }
+                                      },
+                                      child: Align(
+                                        alignment: Alignment.topLeft,
+                                        child: CustomPaint(
+                                          painter: FresnelZonePlotPainter(plotModel.scaledPlot),
+                                          child: Container(),
+                                        ),
+                                      ),
+                                    );
+                                  }
                                 ),
                               ),
                             ),
                             Expanded(
-                              flex: 2,
+                              flex: 4,
                               child: PlotInfo(),
                             ),
-                            Expanded(
-                              flex: 2,
-                              child: Container(
-                              ),
-                            )
                           ],
                         ),
                       ),

@@ -12,4 +12,7 @@ class Constants {
   static const int countOfFresnelZonePoints = 1000;
 
   static const double maxFresnelZoneOverlapCoefficient = 0.4;
+
+  // min_x, min_y, max_x, max_y
+  static const List<double> canvasRangeOfValues = [0.02, 0.02, 0.98, 0.98];
 }

@@ -70,7 +70,7 @@ class FresnelZonePlotPainter extends CustomPainter {
       ..strokeWidth = 3
       ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset(size.width * antennaCoordinates[0][0], size.height * antennaCoordinates[0][1]), 7, paint);
-    canvas.drawCircle(Offset(size.width * antennaCoordinates[1][0], size.height * antennaCoordinates[1][1]), 5, paint);
+    canvas.drawCircle(Offset(size.width * antennaCoordinates[1][0], size.height * antennaCoordinates[1][1]), 7, paint);
 
 
     // Draw fresnel zone

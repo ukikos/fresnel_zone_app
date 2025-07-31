@@ -1,16 +1,16 @@
-import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:fresnel_zone_app/features/fresnel_zone/data/repository/elevation_profile_repository.dart';
 import 'package:fresnel_zone_app/features/fresnel_zone/model/dto/elevation_profile_dto.dart';
 import 'package:fresnel_zone_app/features/fresnel_zone/model/dto/plot_dto.dart';
+import 'package:fresnel_zone_app/features/fresnel_zone/service/geometry_service.dart';
 import 'package:fresnel_zone_app/util/constants.dart';
 
 class FresnelZoneModel extends ChangeNotifier {
 
+  final GeometryService _geometryService = GeometryService();
   final ElevationProfileRepository _elevationProfileRepository = ElevationProfileRepository();
-
   bool isCalculatiing = false;
 
   // Input data
@@ -246,10 +246,10 @@ class FresnelZoneModel extends ChangeNotifier {
     for (int i = 1; i < countOfFresnelZonePoints - 1; i++) {
       double currPointX = antenna1X + i * lineOfSightStepX;
       double currPointY = antenna1Y + i * lineOfSightStepY;
-      double d1 = _distanceBetweenTwoPoints(currPointX, currPointY, antenna1X, antenna1Y);
-      double d2 = _distanceBetweenTwoPoints(currPointX, currPointY, antenna2X, antenna2Y);
+      double d1 = _geometryService.distanceBetweenTwoPoints(currPointX, currPointY, antenna1X, antenna1Y);
+      double d2 = _geometryService.distanceBetweenTwoPoints(currPointX, currPointY, antenna2X, antenna2Y);
       double radiusOfFZ = _radiusOfFirstFresnelZone(d1, d2, frequency!);
-      List<double> currFresnelZonePoint = _pointBySegmentAndUpperPerpendicularLength(currPointX, currPointY, antenna1X, antenna1Y, radiusOfFZ);
+      List<double> currFresnelZonePoint = _geometryService.pointBySegmentAndUpperPerpendicularLength(currPointX, currPointY, antenna1X, antenna1Y, radiusOfFZ);
       _fresnelZoneCoordiantes.add([currFresnelZonePoint[0], currFresnelZonePoint[1]]);
     }
 
@@ -257,10 +257,10 @@ class FresnelZoneModel extends ChangeNotifier {
     for (int i = 1; i < countOfFresnelZonePoints - 1; i++) {
       double currPointX = antenna2X - i * lineOfSightStepX;
       double currPointY = antenna2Y - i * lineOfSightStepY;
-      double d1 = _distanceBetweenTwoPoints(currPointX, currPointY, antenna2X, antenna2Y);
-      double d2 = _distanceBetweenTwoPoints(currPointX, currPointY, antenna1X, antenna1Y);
+      double d1 = _geometryService.distanceBetweenTwoPoints(currPointX, currPointY, antenna2X, antenna2Y);
+      double d2 = _geometryService.distanceBetweenTwoPoints(currPointX, currPointY, antenna1X, antenna1Y);
       double radiusOfFZ = _radiusOfFirstFresnelZone(d1, d2, frequency!);
-      List<double> currFresnelZonePoint = _pointBySegmentAndLowerPerpendicularLength(currPointX, currPointY, antenna2X, antenna2Y, radiusOfFZ);
+      List<double> currFresnelZonePoint = _geometryService.pointBySegmentAndLowerPerpendicularLength(currPointX, currPointY, antenna2X, antenna2Y, radiusOfFZ);
       _fresnelZoneCoordiantes.add([currFresnelZonePoint[0], currFresnelZonePoint[1]]);
     }
 
@@ -273,7 +273,7 @@ class FresnelZoneModel extends ChangeNotifier {
       double elevProfilePointY = _elevationProfileCoordinates[i][1];
 
 
-      List<double> intersectionPoint = _intersectionPointOfLineAndPerpendecular(
+      List<double> intersectionPoint = _geometryService.intersectionPointOfLineAndPerpendecular(
         antenna1X, antenna1Y,
         antenna2X, antenna2Y,
         elevProfilePointX, elevProfilePointY
@@ -285,13 +285,13 @@ class FresnelZoneModel extends ChangeNotifier {
         break;
       }
 
-      double distanceFromElevProfilePointToLineOfSight = _distanceBetweenTwoPoints(
+      double distanceFromElevProfilePointToLineOfSight = _geometryService.distanceBetweenTwoPoints(
         elevProfilePointX, elevProfilePointY,
         intersectionPoint[0], intersectionPoint[1]
       );
 
-      double d1 = _distanceBetweenTwoPoints(intersectionPoint[0], intersectionPoint[1], antenna1X, antenna1Y);
-      double d2 = _distanceBetweenTwoPoints(intersectionPoint[0], intersectionPoint[1], antenna2X, antenna2Y);
+      double d1 = _geometryService.distanceBetweenTwoPoints(intersectionPoint[0], intersectionPoint[1], antenna1X, antenna1Y);
+      double d2 = _geometryService.distanceBetweenTwoPoints(intersectionPoint[0], intersectionPoint[1], antenna2X, antenna2Y);
 
       double radiusOfFZ = _radiusOfFirstFresnelZone(d1, d2, frequency!);
 
@@ -303,64 +303,6 @@ class FresnelZoneModel extends ChangeNotifier {
     }
     isCalculatiing = false;
     notifyListeners();
-  }
-
-  /// Calculate coefficients of line by two points
-  /// 
-  /// Search for the coefficients A, B, C of equation Ax+By+C=0.
-  List<double> _coefficientsOfLine(double x1, double y1, double x2, double y2) {
-    double A = y1 - y2;
-    double B = x2 - x1;
-    double C = x1*y2 - x2*y1;
-    return List.unmodifiable([A, B, C]);
-  }
-
-  /// Calculate distance from point to line
-  /// 
-  /// If distance < 0 then the point is below the line of sight.
-  /// If distance > 0 then the point is above the line of sight.
-  double _distanceFromPointToLine(double x, double y, List<double> coefficients) {
-    double A = coefficients[0];
-    double B = coefficients[1];
-    double C = coefficients[2];
-    double distance = (A*x + B*y + C) / (sqrt(pow(A, 2) + pow(B, 2)));
-    return B > 0 ? distance : -distance;
-  }
-
-  /// Find intersection point of line with points (x1, y1), (x2, y2) and perpendecular from (x3, y3)
-  List<double> _intersectionPointOfLineAndPerpendecular(
-    double x1, double y1,
-    double x2, double y2,
-    double x3, double y3
-  ) {
-    double abx = x2 - x1;
-    double aby = y2 - y1;
-    double dacab = (x3 - x1) * abx + (y3 - y1) * aby;
-    double dab = abx * abx + aby * aby;
-    double t = dacab / dab;
-    double px = x1 + abx * t;
-    double py = y1 + aby * t;
-
-    return List.unmodifiable([px, py]);
-  }
-
-  // Calculate point by segment AB and perpendicular length from A
-  List<double> _pointBySegmentAndLowerPerpendicularLength(double x1, double y1, double x2, double y2, double length) {
-    double theta = atan((y2 - y1) / (x2 - x1));
-    double x = x1 + length * sin(pi / 2 + (pi / 2 - theta));
-    double y = y1 + length * cos(pi / 2 + (pi / 2 - theta));
-    return List.unmodifiable([x, y]);
-  }
-
-  List<double> _pointBySegmentAndUpperPerpendicularLength(double x1, double y1, double x2, double y2, double length) {
-    double theta = atan((y2 - y1) / (x2 - x1));
-    double x = x1 + length * cos(pi / 2 + theta);
-    double y = y1 + length * sin(pi / 2 + theta);
-    return List.unmodifiable([x, y]);
-  }
-
-  double _distanceBetweenTwoPoints(double x1, double y1, double x2, double y2) {
-    return (sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2)));
   }
 
   double _radiusOfFirstFresnelZone(double d1, double d2, double freq) {

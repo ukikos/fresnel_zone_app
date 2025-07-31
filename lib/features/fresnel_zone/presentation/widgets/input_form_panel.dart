@@ -20,6 +20,7 @@ class _InputFormPanelState extends State<InputFormPanel> {
   final _pathTextController = TextEditingController();
 
   String? _pathToDirectory;
+  late Future<List<String>?> filenames;
 
   TextEditingController get height1TextController => _height1TextController;
   TextEditingController get height2TextController => _height2TextController;
@@ -46,15 +47,33 @@ class _InputFormPanelState extends State<InputFormPanel> {
     return null;
   }
 
-  Future<List<String>?> getFilenamesInDirectory(String pathToDirectory) async {
+  // Future<List<String>?> getFilenamesInDirectory(String pathToDirectory) async {
+  //   if (await Directory(pathToDirectory).exists() == false) {
+  //     return null;
+  //   }
+  //   Directory dir = Directory(pathToDirectory);
+  //   List<FileSystemEntity> entities = dir.listSync();
+  //   List<File> files = entities.whereType<File>().toList();
+  //   List<String> filePaths = files.map((e) => e.path).toList();
+  //   return filePaths;
+  // }
+
+  void getFilenamesInDirectory(String pathToDirectory) async {
     if (await Directory(pathToDirectory).exists() == false) {
-      return null;
+      filenames = Future(() => null);
+      return;
     }
     Directory dir = Directory(pathToDirectory);
     List<FileSystemEntity> entities = dir.listSync();
     List<File> files = entities.whereType<File>().toList();
     List<String> filePaths = files.map((e) => e.path).toList();
-    return filePaths;
+    filenames = Future(() => filePaths);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getFilenamesInDirectory('');
   }
 
   @override
@@ -186,6 +205,9 @@ class _InputFormPanelState extends State<InputFormPanel> {
                             onEditingComplete: () {
                               setState(() {
                                 _pathToDirectory = pathTextController.text;
+                                if (_pathToDirectory != null) {
+                                  getFilenamesInDirectory(_pathToDirectory!);
+                                }
                               });
                             }
                           ),
@@ -200,6 +222,7 @@ class _InputFormPanelState extends State<InputFormPanel> {
                                 setState(() {
                                   _pathToDirectory = result;
                                   pathTextController.text = result;
+                                  getFilenamesInDirectory(result);
                                 });
                               },
                               style: ElevatedButton.styleFrom(
@@ -234,7 +257,7 @@ class _InputFormPanelState extends State<InputFormPanel> {
                         );
                       } else {
                         return FutureBuilder<List<String>?>(
-                          future: getFilenamesInDirectory(_pathToDirectory!),
+                          future: filenames,
                           builder:(context, snapshot) {
                             final filePaths = snapshot.data;
                             if (snapshot.connectionState == ConnectionState.waiting) {
