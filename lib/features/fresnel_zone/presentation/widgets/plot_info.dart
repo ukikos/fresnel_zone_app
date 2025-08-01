@@ -23,11 +23,11 @@ class _PlotInfoState extends State<PlotInfo> {
             children: [
               Consumer<FresnelZoneModel>(
                 builder: (context, model, child) {
-                  String distance = model.getDistance().toString();
-                  distance = (distance == 'null') ? 'неизвестно' : '$distance м.';
+                  double? distance = model.getDistance();
+                  String distanceText = (distance == null) ? 'неизвестно' : '${distance.toStringAsFixed(3)} м.';
                   return Flexible(
                     child: Text(
-                      'Расстояние: $distance',
+                      'Расстояние: $distanceText',
                       textAlign: TextAlign.left,
                       style: TextStyle(fontSize: 16),
                       maxLines: 2,
@@ -67,7 +67,7 @@ class _PlotInfoState extends State<PlotInfo> {
                   builder: (context, plotModel, child) {
                     SelectedPointDto? selectedPoint = plotModel.getSelectedPoint();
                     return Text(
-                      (selectedPoint == null) ? '' : 'd1: ${selectedPoint.d1}',
+                      (selectedPoint == null) ? '' : 'd1: ${selectedPoint.d1.toStringAsFixed(3)} м.',
                       textAlign: TextAlign.left,
                       style: TextStyle(fontSize: 16),
                       maxLines: 2,
@@ -81,7 +81,7 @@ class _PlotInfoState extends State<PlotInfo> {
                   builder: (context, plotModel, child) {
                     SelectedPointDto? selectedPoint = plotModel.getSelectedPoint();
                     return Text(
-                      (selectedPoint == null) ? '' : 'd2: ${selectedPoint.d2}',
+                      (selectedPoint == null) ? '' : 'd2: ${selectedPoint.d2.toStringAsFixed(3)} м.',
                       textAlign: TextAlign.left,
                       style: TextStyle(fontSize: 16),
                       maxLines: 2,
@@ -104,7 +104,9 @@ class _PlotInfoState extends State<PlotInfo> {
                       );
                     } else {
                       return Text(
-                        (selectedPoint.elevationOfProfile == null) ? 'Высота рельефа: неизвестно' : 'Высота рельефа: ${selectedPoint.elevationOfProfile}',
+                        (selectedPoint.elevationOfProfile == null)
+                          ? 'Высота рельефа: неизвестно'
+                          : 'Высота рельефа: ${selectedPoint.elevationOfProfile!.toStringAsFixed(3)} м.',
                         textAlign: TextAlign.left,
                         style: TextStyle(fontSize: 16),
                         maxLines: 2,
@@ -119,7 +121,7 @@ class _PlotInfoState extends State<PlotInfo> {
                   builder: (context, plotModel, child) {
                     SelectedPointDto? selectedPoint = plotModel.getSelectedPoint();
                     return Text(
-                      (selectedPoint == null) ? '' : 'Высота над уровнем моря: ${selectedPoint.heightAboveSeaLevel}',
+                      (selectedPoint == null) ? '' : 'Высота точки над уровнем моря: ${selectedPoint.heightAboveSeaLevel.toStringAsFixed(3)} м.',
                       textAlign: TextAlign.left,
                       style: TextStyle(fontSize: 16),
                       maxLines: 2,
